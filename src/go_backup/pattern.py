@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import itertools
 import os
 import re
 from collections import namedtuple
@@ -69,6 +70,7 @@ def pattern_decision(filename, patterns, default_decision=INCLUDE):
             res = p[0]
     return res
 
+
 def assemble_filenames(rootdir, patterns):
     filenames = []
     directories = []
@@ -76,28 +78,49 @@ def assemble_filenames(rootdir, patterns):
 
     def listdir_onerror(error):
         errors.append(error)
-
+   
     rootdir = os.path.normpath(rootdir)
+
+    # Handle root separately because the os.walk code below is not going to
+    # process it.
+    decision = pattern_decision(os.sep, patterns)
+    if decision == INCLUDE:
+        # If we want to include the directory entry, we have to find out
+        # its type.
+        if os.path.isdir(rootdir):
+            directories.append(os.sep)
+        else:
+            raise ValueError('The root is not a directory, which should not happen.')
+    elif decision != EXCLUDE:
+        raise ValueError('Unknown file decision {}.'.format(decision))
+
+    # Now recursively traverse the file system
     for root, dirs, files in os.walk(rootdir, topdown=True,
                                      onerror=listdir_onerror, followlinks=False):
-        if root != rootdir:
-            directory = root[len(rootdir):]
-        else:
-            directory = os.sep
-        directories.append(directory)
-        for f in files:
-            filename = os.path.join(root, f)
+        for f in itertools.chain(files, dirs):
+            fullname = os.path.join(root, f)
             # The "root" returned by os.walk includes rootdir. We strip out this
             # part so that the filename starts with os.sep. Note that we have
             # a special case of rootdir is os.sep because in that case, normpath
             # does not remove the trailing os.sep.
             if rootdir != os.sep:
-              filename = filename[len(rootdir):]
-            decision = pattern_decision(filename, patterns)
+                name = fullname[len(rootdir):]
+            decision = pattern_decision(name, patterns)
             if decision == INCLUDE:
-                filenames.append(filename)
+                # If we want to include the directory entry, we have to find out
+                # its type.
+                if os.path.islink(fullname) or os.path.isfile(fullname):
+                    filenames.append(name)
+                elif os.path.isdir(fullname):
+                    directories.append(name)
+                else:
+                    raise ValueError('Directory entry "{}" has an unknown state.'.format(fullname))
             elif decision != EXCLUDE:
                 raise ValueError('Unknown file decision {}.'.format(decision))
+        # Also, we remove all mount points from dirs so that os.walk does not
+        # recurse into a different file system.
+        dirs[:] = [d for d in dirs if not os.path.ismount(os.path.join(rootdir, d))]
+
     return MatchingResult(filenames, directories, errors)
 
 
