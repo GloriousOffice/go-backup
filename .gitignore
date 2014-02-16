@@ -1,3 +1,8 @@
+# Our package
+go-backup
+
+# Default GitHub .gitignore for Python follows
+#
 *.py[cod]
 
 # C extensions
