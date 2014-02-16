@@ -35,6 +35,10 @@ nosetests.xml
 # Translations
 *.mo
 
+# Vim
+*.swp
+*.swo
+
 # Mr Developer
 .mr.developer.cfg
 .project
