@@ -66,13 +66,13 @@ def pattern_decision(filename, patterns, default_decision=INCLUDE):
             res = p[0]
     return res
 
-
-def listdir_onerror(error):
-    raise error
-
-
 def assemble_filenames(rootdir, patterns):
-    res = []
+    filenames = []
+    errors = []
+
+    def listdir_onerror(error):
+        errors.append(error)
+
     rootdir = os.path.normpath(rootdir)
     for root, dirs, files in os.walk(rootdir, topdown=True,
                                      onerror=listdir_onerror, followlinks=False):
@@ -86,17 +86,28 @@ def assemble_filenames(rootdir, patterns):
               filename = filename[len(rootdir):]
             decision = pattern_decision(filename, patterns)
             if decision == INCLUDE:
-                res.append(filename)
+                filenames.append(filename)
             elif decision != EXCLUDE:
                 raise ValueError('Unknown file decision {}.'.format(decision))
-    return res
+    return (filenames, errors)
 
 
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
     import StringIO
+    import sys
+    rootdir = sys.argv[1]
     test_includes = StringIO.StringIO("# some test includes\n+ /\n")
     patterns = parse_pattern_file(test_includes)
-    assemble_filenames("/tmp", patterns)
+    filenames, errors = assemble_filenames(rootdir, patterns)
+
+    print "The following files will be examined (relative to {}):".format(rootdir)
+    for filename in filenames:
+        print "{}".format(filename)
+
+    print
+    print "The following errors were encountered:"
+    for error in errors:
+        print "  {}: {} (errno: {})".format(error.filename, error.strerror, error.errno)
     # TODO: permission denied
