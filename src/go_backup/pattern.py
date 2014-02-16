@@ -34,6 +34,9 @@ def filename_matches_pattern(filename, pattern):
 
     >>> filename_matches_pattern('/foobar', '/foo')
     False
+
+    >>> filename_matches_pattern('/foo', '/')
+    True
     """
     if not (filename.startswith(os.sep) and pattern.startswith(os.sep)):
         raise ValueError('Both file name ("{}") and pattern ("{}") must start with "{}".'.format(filename, pattern, os.sep))
@@ -45,7 +48,11 @@ def filename_matches_pattern(filename, pattern):
         # if pattern is a file name, then only the file name itself can match
         return True
     elif norm_filename.startswith(norm_pattern + os.sep):
-        # if pattern is a directory then file name must start with "pattern/"
+        # if pattern is a subdirectory of root then file name must
+        # start with "pattern/"
+        return True
+    elif norm_pattern == os.sep:
+        # if a pattern is root itself then any filename matches
         return True
     else:
         # nothing else matches
@@ -67,7 +74,7 @@ def listdir_onerror(error):
 def assemble_filenames(rootdir, patterns):
     res = []
     for root, dirs, files in os.walk(rootdir, topdown=True,
-            onerror=listdir_onerror, followlinks=False)
+                                     onerror=listdir_onerror, followlinks=False):
         for f in files:
             filename = os.path.join(root, f)
             # TODO:
@@ -84,4 +91,3 @@ def assemble_filenames(rootdir, patterns):
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
->>>>>>> f10e0fd56bfc83de137acd592399b3750d28c2b4
