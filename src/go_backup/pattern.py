@@ -66,14 +66,17 @@ def listdir_onerror(error):
 
 def assemble_filenames(rootdir, patterns):
     res = []
+    rootdir = os.path.normpath(rootdir)
     for root, dirs, files in os.walk(rootdir, topdown=True,
             onerror=listdir_onerror, followlinks=False)
         for f in files:
             filename = os.path.join(root, f)
-            # TODO:
             # The "root" returned by os.walk includes rootdir. We strip out this
-            # part so that the filename starts with os.sep.
-            #filename = 
+            # part so that the filename starts with os.sep. Note that we have
+            # a special case of rootdir is os.sep because in that case, normpath
+            # does not remove the trailing os.sep.
+            if rootdir != os.sep:
+              filename = filename[len(rootdir):]
             decision = pattern_decision(filename, patterns)
             if decision == INCLUDE:
                 res.append(filename)
