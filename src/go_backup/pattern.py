@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import os
 import re
+from collections import namedtuple
+
+MatchingResult = namedtuple('MatchingResult', ['filenames', 'directories', 'errors'])
 
 INCLUDE = 1
 EXCLUDE = 2
@@ -68,6 +71,7 @@ def pattern_decision(filename, patterns, default_decision=INCLUDE):
 
 def assemble_filenames(rootdir, patterns):
     filenames = []
+    directories = []
     errors = []
 
     def listdir_onerror(error):
@@ -76,6 +80,11 @@ def assemble_filenames(rootdir, patterns):
     rootdir = os.path.normpath(rootdir)
     for root, dirs, files in os.walk(rootdir, topdown=True,
                                      onerror=listdir_onerror, followlinks=False):
+        if root != rootdir:
+            directory = root[len(rootdir):]
+        else:
+            directory = os.sep
+        directories.append(directory)
         for f in files:
             filename = os.path.join(root, f)
             # The "root" returned by os.walk includes rootdir. We strip out this
@@ -89,7 +98,7 @@ def assemble_filenames(rootdir, patterns):
                 filenames.append(filename)
             elif decision != EXCLUDE:
                 raise ValueError('Unknown file decision {}.'.format(decision))
-    return (filenames, errors)
+    return MatchingResult(filenames, directories, errors)
 
 
 if __name__ == "__main__":
@@ -103,13 +112,18 @@ if __name__ == "__main__":
     else:
         patterns_file = StringIO.StringIO("# some test includes\n+ /\n")
     patterns = parse_pattern_file(patterns_file)
-    filenames, errors = assemble_filenames(rootdir, patterns)
+    res = assemble_filenames(rootdir, patterns)
 
     print "The following files will be examined (relative to {}):".format(rootdir)
-    for filename in filenames:
+    for filename in res.filenames:
         print "{}".format(filename)
 
     print
+    print "The following directories will be copied (relative to {}):".format(rootdir)
+    for directory in res.directories:
+        print "{}".format(directory)
+
+    print
     print "The following errors were encountered:"
-    for error in errors:
+    for error in res.errors:
         print "  {}: {} (errno: {})".format(error.filename, error.strerror, error.errno)
