@@ -10,32 +10,32 @@ def parse_pattern_file(f):
     regex = re.compile('^([+-])\W+({}.*)$'.format(re.escape(os.sep)))
     for line in f:
         line = line.rstrip()
-        if f.startswith('#'):
+        if line.startswith('#'):
             continue
         else:
             r = regex.match(line.rstrip())
             if not r:
                 raise ValueError('Line "{}" is not a valid pattern.'.format(
                         line))
-            if r.groups[0] == '+':
-                res.append((INCLUDE, r.groups[1]))
-            elif r.groups[0] == '-':
-                res.append((EXCLUDE, r.groups[1]))
+            if r.groups()[0] == '+':
+                res.append((INCLUDE, r.groups()[1]))
+            elif r.groups()[0] == '-':
+                res.append((EXCLUDE, r.groups()[1]))
             else:
                 raise ValueError('Unknown pattern modifier "{}".'.format(
-                        r.groups[0]))
+                        r.groups()[0]))
     return res
 
-def filename_matches_pattern(filename, pattern):
+def filename_matches_single_pattern(filename, pattern):
     """Returns True iff filename matches pattern.
 
-    >>> filename_matches_pattern('/foo/bar', '/foo')
+    >>> filename_matches_single_pattern('/foo/bar', '/foo')
     True
 
-    >>> filename_matches_pattern('/foobar', '/foo')
+    >>> filename_matches_single_pattern('/foobar', '/foo')
     False
 
-    >>> filename_matches_pattern('/foo', '/')
+    >>> filename_matches_single_pattern('/foo', '/')
     True
     """
     if not (filename.startswith(os.sep) and pattern.startswith(os.sep)):
@@ -91,6 +91,12 @@ def assemble_filenames(rootdir, patterns):
                 raise ValueError('Unknown file decision {}.'.format(decision))
     return res
 
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+    import StringIO
+    test_includes = StringIO.StringIO("# some test includes\n+ /\n")
+    patterns = parse_pattern_file(test_includes)
+    assemble_filenames("/tmp", patterns)
+    # TODO: permission denied
