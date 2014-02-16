@@ -98,8 +98,11 @@ if __name__ == "__main__":
     import StringIO
     import sys
     rootdir = sys.argv[1]
-    test_includes = StringIO.StringIO("# some test includes\n+ /\n")
-    patterns = parse_pattern_file(test_includes)
+    if len(sys.argv) >= 3:
+        patterns_file = open(sys.argv[2])
+    else:
+        patterns_file = StringIO.StringIO("# some test includes\n+ /\n")
+    patterns = parse_pattern_file(patterns_file)
     filenames, errors = assemble_filenames(rootdir, patterns)
 
     print "The following files will be examined (relative to {}):".format(rootdir)
@@ -110,4 +113,3 @@ if __name__ == "__main__":
     print "The following errors were encountered:"
     for error in errors:
         print "  {}: {} (errno: {})".format(error.filename, error.strerror, error.errno)
-    # TODO: permission denied
