@@ -46,6 +46,8 @@ For each macthing file/directory/symbolic link of `src` go-backup will store the
 
 (TODO: specify format)
 
+(TODO: file ownership? permissions?)
+
 Handling of special cases
 -------------------------
 
