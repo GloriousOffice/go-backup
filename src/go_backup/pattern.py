@@ -4,7 +4,7 @@ import os
 import re
 from collections import namedtuple
 
-MatchingResult = namedtuple('MatchingResult', ['filenames', 'directories', 'errors'])
+MatchingResult = namedtuple('MatchingResult', ['filenames', 'directories', 'errors', 'ignored'])
 
 INCLUDE = 1
 EXCLUDE = 2
@@ -75,10 +75,11 @@ def assemble_filenames(rootdir, patterns):
     filenames = []
     directories = []
     errors = []
+    ignored = []
 
     def listdir_onerror(error):
         errors.append(error)
-   
+
     rootdir = os.path.normpath(rootdir)
 
     # Handle root separately because the os.walk code below is not going to
@@ -114,14 +115,14 @@ def assemble_filenames(rootdir, patterns):
                 elif os.path.isdir(fullname):
                     directories.append(name)
                 else:
-                    raise ValueError('Directory entry "{}" has an unknown state.'.format(fullname))
+                    ignored.append(name)
             elif decision != EXCLUDE:
                 raise ValueError('Unknown file decision {}.'.format(decision))
         # Also, we remove all mount points from dirs so that os.walk does not
         # recurse into a different file system.
         dirs[:] = [d for d in dirs if not os.path.ismount(os.path.join(rootdir, d))]
 
-    return MatchingResult(filenames, directories, errors)
+    return MatchingResult(filenames, directories, errors, ignored)
 
 
 if __name__ == "__main__":
@@ -145,6 +146,11 @@ if __name__ == "__main__":
     print "The following directories will be copied (relative to {}):".format(rootdir)
     for directory in res.directories:
         print "{}".format(directory)
+
+    print
+    print "The following paths, although not excluded, were ignored:"
+    for path in res.ignored:
+        print "  {}".format(path)
 
     print
     print "The following errors were encountered:"
