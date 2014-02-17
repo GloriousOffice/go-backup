@@ -6,12 +6,13 @@ go-backup is a backup tool.
 Workflow
 --------
 
-The go-backup workflow when invoked as `go-backup src dest` is to:
-1. Verify the current backup (residing in `dest`) with the previously recorded hash digest file from `dest/.go_backup/hashdigests/<most-recent-timestamp>`;
-2. Create hash file for the source directory `src`;
-3. Compare this hash file against the hash file of the backups;
-4. Move files for which the hashes changed or files which got deleted into `dest/.go_backup/oldfiles/<current-timestamp>`;
-5. Copy over all changed/new files from `src` to `dest`;
+As default, go-backup is invoked with `go-backup src dest`. Then, the workflow is as follows:
+
+1. Verify the current backup (residing in `dest`) with the previously recorded hash digest data from `dest/.go_backup/backup_<most-recent-timestamp>/metadata.json` (after checking this file with the corresponding `hashsums.json`).
+2. Compute the hashes for the source directory `src`.
+3. Compare the hashes of the backup and the source directory.
+4. Move files for which the hashes changed or files which were deleted into `dest/.go_backup/backup_<current-timestamp>/diff_to_prev/diff_files`.
+5. Copy all changed/new files from `src` to `dest`.
 6. Verify the backup at `dest` against the hash file of `src`.
 
 Hashing is done using `hashdeep` and copying/moving is done using `rsync`.
