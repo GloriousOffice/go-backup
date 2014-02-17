@@ -29,24 +29,51 @@ go-backup expects the following structure under `src`:
 
 go-backup will maintain the following structure under `dest/.go_backup`:
 * a `version.txt` containing the version of the maintained structures; this will get bumped up with every incompatible change to go-backup;
-* an `oldfiles` directory containing a subdirectories with moved/changed files from previous backup iterations. For example, assume that today's version of `src` does not contain `src/foo`, while it was backed up in `dest/foo` during the previous go-backup run. Then go-backup would move `dest/foo` to `dest/oldfiles/<current-timestamp>/foo`;
-* a `hashdigests` directory containing `hashdeep` DFXML outputs of previous go-backup runs on `src`. Each such file itself is checksummed and a result stored in (TODO);
-* a `metadata` folder with text files (one per each go-backup run) containing meta data of all matching files/directories/symbolic links from `src`. Each meta data file is checksummed and a result stored in (TODO).
+* a directory `backup_YYYY_MM_DD_HH_MM_SS` for each go-backup invocation containing:
+  * a `metadata.json` containing an entry for each file/directory/symbolic link (listing its meta data and checksums (if applicable));
+  * a `log.txt`
+  * a `diff_files` directory containing moved/changed files from previous backup iterations. For example, assume that today's version of `src` does not contain `src/foo`, while it was backed up in `dest/foo` during the previous go-backup run. Then go-backup would move `dest/foo` to `dest/oldfiles/<current-timestamp>/foo`;
+  * a `prev_metadata.json` file describing the structure of `src` before the `go-backup` invocation;
+  * and `hashsums.json` containing checksums of `metadata.json`, `prev_metadata.json` and `log.txt`
 
-Metadata files
---------------
+Storing `prev_metadata.json` which, excluding failure cases, will coincide with `metadata.json` of previous backup is intentional: we want to be able to simply delete old `backup_...` directories, without compromising our ability to restore-to-previous of all following backups.
 
-For each macthing file/directory/symbolic link of `src` go-backup will store the following information in the metadata file:
+Format of `metadata.json`
+-------------------------
 
-* name;
-* type (file/directory/symbolic link);
-* creation, access and modification times;
-* size (for files);
-* target (for symbolic links).
+A `metadata.json` contains a dictionary with the following structure:
+* `timestamp`
+* `command_line`
+* `files` a list of dictionaries each having the following structure:
+  * `name`
+  * `atime`, `ctime`, `mtime`
+  * `sha1`, `sha256`
+  * `size`
+  * `user`
+  * `group`
+  * `permissions`
+* `directories`, a list of dictionaries each having the following structure:
+  * `name`
+  * `atime`, `ctime`, `mtime`
+  * `user`
+  * `group`
+  * `permissions`
+* `symlinks`, a list of dictionaries each having the following structure:
+  * `name`
+  * `target`
+  * `atime`, `ctime`, `mtime`
+  * `user`
+  * `group`
+  * `permissions`
 
-(TODO: specify format)
+Logging
+-------
 
-(TODO: file ownership? permissions?)
+The output of go-backup will include:
+* all errors encountered;
+* all paths ignored (e.g. named pipes);
+* difference between previous go-backup output and the current state of `src`;
+* statistics.
 
 Handling of special cases
 -------------------------
