@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 from collections import namedtuple
 
+import utils
+
 Digest = namedtuple('Digest', ['sha1', 'sha256'])
 
 def version():
@@ -21,25 +23,22 @@ def is_supported_version(version):
     return version in supported_versions
 
 
-# Return a dict with (filename, digest)
-def compute_digests(rootdir, filenames, num_threads=-1):
-    # First, we write the temporary file with filenames in the format expected
-    # by hashdeep
+def compute_digests(rootdir, paths, num_threads=None):
+    """Return a dict with (path, digest)."""
+
+    # First, we write the temporary file with filenames in the format
+    # expected by hashdeep
     rootdir = os.path.normpath(rootdir)
     fd, tempfilename = tempfile.mkstemp()
     with os.fdopen(fd, 'w') as tmpfile:
-        for f in filenames:
-            if rootdir != os.sep:
-                if f.startswith(os.sep):
-                  f = f[len(os.sep):]
-                f = os.path.join(rootdir, f)
-            tmpfile.write(f)
+        for p in paths:
+            tmpfile.write(utils.build_native_path(rootdir, p))
             tmpfile.write('\n')
-          
+
     # Run hashdeep -c sha1,sha256 -f tempfilename -l -d (-j num_threads)
     cmd = ['hashdeep', '-c', 'sha1,sha256', '-f', tempfilename, '-l', '-d']
-    if num_threads > -1:
-      cmd.extend(['-j', str(num_threads)])
+    if num_threads is not None:
+        cmd.extend(['-j', str(num_threads)])
     output = subprocess.check_output(cmd)
 
     # Delete temporary file
@@ -66,16 +65,14 @@ def compute_digests(rootdir, filenames, num_threads=-1):
                     raise ValueError('Unexpected hash type "{}".'.format(
                         child.attrib['type']))
             if child.tag == 'filename':
-                name = child.text
-                if rootdir != os.sep:
-                    name = name[len(rootdir):]
+                name = utils.get_path_from_native_path(rootdir, child.text)
         if not name or not sha1 or not sha256:
             raise ValueError('Could not extract all required information from '
                 'digest.')
         res[name] = Digest(sha1, sha256)
 
     keys = res.keys()
-    if len(keys) != len(filenames) or set(keys) != set(filenames):
+    if len(keys) != len(paths) or set(keys) != set(paths):
         raise ValueError('List of filenames returned by hashdeep does not '
             'match the input list.')
     
