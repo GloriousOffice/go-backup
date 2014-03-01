@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 from collections import namedtuple
 
+import metadata
 import utils
 
 Digest = namedtuple('Digest', ['sha1', 'sha256'])
@@ -93,3 +94,6 @@ if __name__ == "__main__":
                 filenames.append(line.strip())
         result = compute_digests(rootdir, filenames)
         print result
+
+        for f in filenames:
+            print metadata.get_file_metadata(rootdir, f, result)
