@@ -8,8 +8,6 @@ VerificationResult = namedtuple('VerificationResult', ['changed', 'missing',
 
 ScanResult = namedtuple('ScanResult', ['files', 'symlinks', 'directories',
                                        'errors', 'ignored'])
-ComparisonResult = namedtuple('ComparisonReslut', ['changed', 'missing',
-                                                   'unexpected'])
 
 def scan_backup(rootdir):
     files = []
@@ -48,26 +46,20 @@ def scan_backup(rootdir):
     return ScanResult(files, symlinks, directories, errors, ignored)
 
 
-def verify_files(rootdir, files, file_metadata):
+strict_metadata = ['atime', 'mtime', 'ctime', 'user', 'group', 'permissions']
+
+def lenient_metadata_dictionary(metadata):
+    d = metadata._asdict()
+    result = {}
+    for k in d.keys():
+        if k not in strict_metadata:
+            result[k] = d[d]
+    return result
 
 
-def verify_symlinks(rootdir, symlinks, symlink_metadata):
-    original_symlinks = set([x.name for x in symlink_metadata])
-    current_symlinks = set(symlinks)
-    missing = original_symlinks - current_symlinks
-    unexpected = current_symlinks - original_symlinks
-    changed = []
-    for link in original_symlinks.intersection(current_symlinks):
-        current_target = os.readlink(utils.
-    return ComparisonResult([], sorted(list(missing)), sorted(list(unexpected)))
-
-
-def verify_directories(rootdir, directories, directories_metadata):
-    original_directories = set([x.name for x in directories_metadata])
-    current_directories = set(directories)
-    missing = original_directories - current_directories
-    unexpected = current_directories - original_directories
-    return ComparisonResult([], sorted(list(missing)), sorted(list(unexpected)))
+def lenient_match(metadata1, metadata2):
+    return lenient_metadata_dictionary(metadata1)
+        == lenient_metadata_dictionary(metadata2)
 
 
 def verify_backup(rootdir, metadata):
@@ -82,25 +74,45 @@ def verify_backup(rootdir, metadata):
     scan_errors = scan_result.errors
     unexpected = scan_result.ignored
 
-    # Verify the files
-    files_result = verify_files(rootdir, scan_result.files, metadata.files)
-    changed.append(files_result.changed)
-    missing.append(files_result.missing)
-    unexpected.append(files_result.unexpected)
-    
-    # Verify the symlinks
-    symlinks_result = verify_symlinks(rootdir, scan_result.symliks,
-                                      metadata.symlinks)
-    changed.append(symlinks_result.changed)
-    missing.append(symlinks_result.missing)
-    unexpected.append(symlinks_result.unexpected)
+    # Build a dictionary with all original metdata
+    original_metadata = {}
+    for p in itertools.chain(metadata.files, metadata.symlinks,
+                             metadata.directories):
+        original_metadata[p.name] = p
 
-    # Verify the directories
-    directories_result = verify_directories(rootdir, scan_result.directories,
-                                            metadata.directories)
-    changed.append(directories_result.changed)
-    missing.append(directories_result.missing)
-    unexpected.append(directories_result.unexpected)
+    # Build a dictionary with all current metadata
+    current_metadata = {}
+    for f in scan_result.files:
+        current_metadata[f] = metadata.get_file_metadata(rootdir, f, digest_map,
+                                                         uid_map, gid_map)
+    for s in scan_result.symlinks:
+        current_metadata[s] = metadata.get_symlink_metadata(rootdir, f, uid_map,
+                                                            gid_map)
+    for d in scan_results.dictionaries:
+        current_metadata[d] = metadata.get_directory_metadata(rootdir, f,
+                                                              uid_map, gid_map)
+
+    # Find missing and unexpected files
+    all_current_paths = set(scan_result.files + scan_result.symlinks
+                                              + scan_result.directories)
+    all_original_paths = set(metadata.keys())
+
+    missing = sorted(list(all_original_paths - all_current_paths))
+    unexpected.append(list(all_current_paths - all_original_paths))
+    unexpected.sort()
+
+    # Find changed files
+    for p in all_current_paths.intersection(all_original_paths):
+        if not lenient_match(current_metadata[p], original_metadata[p]):
+            changed.append(p)
 
     # Return the final result
     return VerificationResult(changed, missing, unexpected, scan_errors)
+
+
+if __name__ == '__main__':
+    import sys
+    rootdir = sys.argv[1]
+    metadatafile = sys.argv[2]
+    res = verify_backup(rootdir, metadata)
+    print res
