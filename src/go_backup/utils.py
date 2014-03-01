@@ -30,6 +30,9 @@ def get_path_from_native_path(rootdir, native_path):
     >>> get_path_from_native_path('/home/x', '/home/x/foo')
     '/foo'
 
+    >>> get_path_from_native_path('foo', 'foo/bar')
+    '/bar'
+
     >>> get_path_from_native_path('/home/x', '/home/x/foo/bar')
     '/foo/bar'
 

@@ -77,13 +77,13 @@ def write_backup_metadata(f, metadata):
 
 
 def read_backup_metadata(f):
-    d = json.load(d)
+    d = json.load(f)
     if set(d.keys()) != set(BackupMetadata._fields):
         raise ValueError(("Set of backup metadata keys ('%s') does not match expected ('%s')." %
                           (sorted(d.keys()), sorted(BackupMetadata._fields))))
     metadata = BackupMetadata(files=[FileMetadata(**m) for m in d['files']],
                               symlinks=[SymlinkMetadata(**m) for m in d['symlinks']],
-                              direcories=[DirectoryMetadata(**m) for m in d['directories']])
+                              directories=[DirectoryMetadata(**m) for m in d['directories']])
     return metadata
 
 
