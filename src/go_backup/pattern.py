@@ -2,6 +2,7 @@
 import itertools
 import os
 import re
+import utils
 from collections import namedtuple
 
 MatchingResult = namedtuple('MatchingResult', ['filenames', 'symlinks', 'directories', 'errors', 'ignored'])
@@ -102,7 +103,7 @@ def assemble_paths(rootdir, patterns):
                                      onerror=listdir_onerror, followlinks=False):
         for f in itertools.chain(files, dirs):
             native_path = os.path.join(root, f)
-            path = get_path_from_native_path(rootdir, native_path)
+            path = utils.get_path_from_native_path(rootdir, native_path)
             decision = pattern_decision(path, patterns)
             if decision == INCLUDE:
                 # If we want to include the directory entry, we have to find out
