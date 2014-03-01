@@ -108,10 +108,10 @@ def assemble_paths(rootdir, patterns):
             if decision == INCLUDE:
                 # If we want to include the directory entry, we have to find out
                 # its type.
-                if os.path.isfile(native_path):
-                    filenames.append(path)
-                elif os.path.islink(native_path):
+                if os.path.islink(native_path):
                     symlinks.append(path)
+                elif os.path.isfile(native_path):
+                    filenames.append(path)
                 elif os.path.isdir(native_path):
                     directories.append(path)
                 else:
