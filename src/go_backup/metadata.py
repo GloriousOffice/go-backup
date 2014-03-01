@@ -86,7 +86,6 @@ def read_backup_metadata(f):
                               direcories=[DirectoryMetadata(**m) for m in d['directories']])
     return metadata
 
-    
 
 if __name__ == "__main__":
     pass
