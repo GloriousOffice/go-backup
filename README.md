@@ -6,12 +6,13 @@ go-backup is a backup tool.
 Workflow
 --------
 
-The go-backup workflow when invoked as `go-backup src dest` is to:
-1. Verify the current backup (residing in `dest`) with the previously recorded hash digest file from `dest/.go_backup/hashdigests/<most-recent-timestamp>`;
-2. Create hash file for the source directory `src`;
-3. Compare this hash file against the hash file of the backups;
-4. Move files for which the hashes changed or files which got deleted into `dest/.go_backup/oldfiles/<current-timestamp>`;
-5. Copy over all changed/new files from `src` to `dest`;
+As default, go-backup is invoked with `go-backup src dest`. Then, the workflow is as follows:
+
+1. Verify the current backup (residing in `dest`) with the previously recorded hash digest data from `dest/.go_backup/backup_<most-recent-timestamp>/metadata.json` (after checking this file with the corresponding `hashsums.json`).
+2. Compute the hashes for the source directory `src`.
+3. Compare the hashes of the backup and the source directory.
+4. Move files for which the hashes changed or files which were deleted into `dest/.go_backup/backup_<current-timestamp>/diff_to_prev/diff_files`.
+5. Copy all changed/new files from `src` to `dest`.
 6. Verify the backup at `dest` against the hash file of `src`.
 
 Hashing is done using `hashdeep` and copying/moving is done using `rsync`.
@@ -19,7 +20,7 @@ Hashing is done using `hashdeep` and copying/moving is done using `rsync`.
 Patterns
 --------
 
-go-backup expects a file with include/exclude patterns in `src/.go_backup_patterns`. All lines in file must be either comments (starting with `#`), include patterns (matching `+ /dir/ect/ory` or `+ /file/name`) and exclude patterns (matching `- /dir/ect/ory` or `- /file/name`). The last matching pattern wins. The default is to "include" (so empty pattern file would be the same as asking to backup entire `src`). All patterns *look like absolute paths* (e.g. `+ /`), but are interpreted *relative* to `src` and `dest`.
+go-backup expects a file with include/exclude patterns in `src/.go_backup_patterns`. All lines in file must be either comments (starting with `#`), include patterns (matching `+ /dir/ect/ory` or `+ /file/name`) and exclude patterns (matching `- /dir/ect/ory` or `- /file/name`). The last matching pattern wins. The default is to "include" (so empty pattern file would be the same as asking to backup entire `src`). All patterns *look like absolute paths* (e.g. `+ /`), but are interpreted *relative* to `src` and `dest`. The paths are what you would see after a `chroot src`.
 
 Directory structure
 -------------------
@@ -74,6 +75,7 @@ The output of go-backup will include:
 * all paths ignored (e.g. named pipes);
 * difference between previous go-backup output and the current state of `src`;
 * statistics.
+* output of `rsync`.
 
 Handling of special cases
 -------------------------
@@ -81,7 +83,7 @@ Handling of special cases
 With respect to specal file types go-backup will do the following:
 * do not follow symlinks, but pass them over for copying to `rsync`;
 * treat hardlinks as normal files/directories;
-* copy over directories that are mount points, but *not* recurse into them;
+* copy over directories that are mount points, but do *not* recurse into them;
 * ignore block devices, FIFOs and other special file types.
 
 (TODO: have we missed anything?)
@@ -96,4 +98,4 @@ Should be as easy as just copying the `dest` back over to `src` (ignoring `dest/
 Bibliographic notes
 -------------------
 
-go-backup is written by Ludwig Schmidt and Madars Virza. go-backup is written in Python, not Go; apart from being a nice name, the go- in go-backup also stands for [Glorious Office](http://www.gloriousoffice.com/).
+go-backup is written by Ludwig Schmidt and Madars Virza. go-backup is written in Python, not Go; apart from being a nice name, the "go" in go-backup also stands for [Glorious Office](http://www.gloriousoffice.com/).
