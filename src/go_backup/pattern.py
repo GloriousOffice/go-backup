@@ -101,25 +101,20 @@ def assemble_paths(rootdir, patterns):
     for root, dirs, files in os.walk(rootdir, topdown=True,
                                      onerror=listdir_onerror, followlinks=False):
         for f in itertools.chain(files, dirs):
-            fullname = os.path.join(root, f)
-            # The "root" returned by os.walk includes rootdir. We strip out this
-            # part so that the filename starts with os.sep. Note that we have
-            # a special case of rootdir is os.sep because in that case, normpath
-            # does not remove the trailing os.sep.
-            if rootdir != os.sep:
-                name = fullname[len(rootdir):]
-            decision = pattern_decision(name, patterns)
+            native_path = os.path.join(root, f)
+            path = get_path_from_native_path(rootdir, native_path)
+            decision = pattern_decision(path, patterns)
             if decision == INCLUDE:
                 # If we want to include the directory entry, we have to find out
                 # its type.
-                if os.path.isfile(fullname):
-                    filenames.append(name)
-                elif os.path.islink(fullname):
-                    symlinks.append(name)
-                elif os.path.isdir(fullname):
-                    directories.append(name)
+                if os.path.isfile(native_path):
+                    filenames.append(path)
+                elif os.path.islink(native_path):
+                    symlinks.append(path)
+                elif os.path.isdir(native_path):
+                    directories.append(path)
                 else:
-                    ignored.append(name)
+                    ignored.append(path)
             elif decision != EXCLUDE:
                 raise ValueError('Unknown file decision {}.'.format(decision))
         # Also, we remove all mount points from dirs so that os.walk does not
