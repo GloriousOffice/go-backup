@@ -61,7 +61,7 @@ A `metadata.json` contains a dictionary with the following structure:
   * `permissions`
 * `symlinks`, a list of dictionaries each having the following structure:
   * `name`
-  * `target`
+  * `native_target`
   * `atime`, `ctime`, `mtime`
   * `user`
   * `group`
