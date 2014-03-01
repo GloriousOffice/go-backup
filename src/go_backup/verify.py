@@ -108,7 +108,7 @@ def verify_backup(rootdir, mdata, num_threads=None):
     all_original_paths = set(original_metadata.keys())
 
     missing = sorted(list(all_original_paths - all_current_paths))
-    unexpected.append(list(all_current_paths - all_original_paths))
+    unexpected.extend(list(all_current_paths - all_original_paths))
     unexpected.sort()
 
     # Find changed files
