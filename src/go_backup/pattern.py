@@ -4,7 +4,7 @@ import os
 import re
 from collections import namedtuple
 
-MatchingResult = namedtuple('MatchingResult', ['filenames', 'directories', 'errors', 'ignored'])
+MatchingResult = namedtuple('MatchingResult', ['filenames', 'symlinks', 'directories', 'errors', 'ignored'])
 
 INCLUDE = 1
 EXCLUDE = 2
@@ -30,49 +30,51 @@ def parse_pattern_file(f):
                         r.groups()[0]))
     return res
 
-def filename_matches_single_pattern(filename, pattern):
-    """Returns True iff filename matches pattern.
 
-    >>> filename_matches_single_pattern('/foo/bar', '/foo')
+def path_matches_single_pattern(path, pattern):
+    """Returns True iff path matches pattern.
+
+    >>> path_matches_single_pattern('/foo/bar', '/foo')
     True
 
-    >>> filename_matches_single_pattern('/foobar', '/foo')
+    >>> path_matches_single_pattern('/foobar', '/foo')
     False
 
-    >>> filename_matches_single_pattern('/foo', '/')
+    >>> path_matches_single_pattern('/foo', '/')
     True
     """
-    if not (filename.startswith(os.sep) and pattern.startswith(os.sep)):
-        raise ValueError('Both file name ("{}") and pattern ("{}") must start with "{}".'.format(filename, pattern, os.sep))
+    if not (path.startswith(os.sep) and pattern.startswith(os.sep)):
+        raise ValueError('Both file name ("{}") and pattern ("{}") must start with "{}".'.format(path, pattern, os.sep))
 
-    norm_filename = os.path.normpath(filename)
+    norm_path = os.path.normpath(path)
     norm_pattern = os.path.normpath(pattern)
 
-    if norm_filename == norm_pattern:
-        # if pattern is a file name, then only the file name itself can match
+    if norm_path == norm_pattern:
+        # if pattern is a path, then only the path itself can match
         return True
-    elif norm_filename.startswith(norm_pattern + os.sep):
-        # if pattern is a subdirectory of root then file name must
+    elif norm_path.startswith(norm_pattern + os.sep):
+        # if pattern is a subdirectory of root then path must
         # start with "pattern/"
         return True
     elif norm_pattern == os.sep:
-        # if a pattern is root itself then any filename matches
+        # if a pattern is root itself then any path matches
         return True
     else:
         # nothing else matches
         return False
 
 
-def pattern_decision(filename, patterns, default_decision=INCLUDE):
+def pattern_decision(path, patterns, default_decision=INCLUDE):
     res = default_decision
     for p in patterns:
-        if filename_matches_single_pattern(filename, p[1]):
+        if path_matches_single_pattern(path, p[1]):
             res = p[0]
     return res
 
 
-def assemble_filenames(rootdir, patterns):
+def assemble_paths(rootdir, patterns):
     filenames = []
+    symlinks = []
     directories = []
     errors = []
     ignored = []
@@ -110,8 +112,10 @@ def assemble_filenames(rootdir, patterns):
             if decision == INCLUDE:
                 # If we want to include the directory entry, we have to find out
                 # its type.
-                if os.path.islink(fullname) or os.path.isfile(fullname):
+                if os.path.isfile(fullname):
                     filenames.append(name)
+                elif os.path.islink(fullname):
+                    symlinks.append(name)
                 elif os.path.isdir(fullname):
                     directories.append(name)
                 else:
@@ -122,7 +126,7 @@ def assemble_filenames(rootdir, patterns):
         # recurse into a different file system.
         dirs[:] = [d for d in dirs if not os.path.ismount(os.path.join(rootdir, d))]
 
-    return MatchingResult(filenames, directories, errors, ignored)
+    return MatchingResult(filenames, symlinks, directories, errors, ignored)
 
 
 if __name__ == "__main__":
@@ -136,11 +140,16 @@ if __name__ == "__main__":
     else:
         patterns_file = StringIO.StringIO("# some test includes\n+ /\n")
     patterns = parse_pattern_file(patterns_file)
-    res = assemble_filenames(rootdir, patterns)
+    res = assemble_paths(rootdir, patterns)
 
     print "The following files will be examined (relative to {}):".format(rootdir)
     for filename in res.filenames:
         print "{}".format(filename)
+
+    print
+    print "The following symlinks will be copied (relative to {}):".format(rootdir)
+    for symlink in res.symlinks:
+        print "{}".format(symlink)
 
     print
     print "The following directories will be copied (relative to {}):".format(rootdir)
