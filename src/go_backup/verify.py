@@ -62,7 +62,7 @@ def lenient_match(metadata1, metadata2):
         == lenient_metadata_dictionary(metadata2)
 
 
-def verify_backup(rootdir, metadata):
+def verify_backup(rootdir, metadata, num_threads=None):
     # Results
     changed = []
     missing = []
@@ -81,6 +81,10 @@ def verify_backup(rootdir, metadata):
         original_metadata[p.name] = p
 
     # Build a dictionary with all current metadata
+    digest_map = hashdeep.compute_digests(rootdir, scan_result.filenames,
+                                          num_threads)
+    uid_map = utils.get_uid_name_map()
+    gid_map = utils.get_gid_name_map()
     current_metadata = {}
     for f in scan_result.files:
         current_metadata[f] = metadata.get_file_metadata(rootdir, f, digest_map,
@@ -114,5 +118,7 @@ if __name__ == '__main__':
     import sys
     rootdir = sys.argv[1]
     metadatafile = sys.argv[2]
+    with open(metadatafile, 'r') as f:
+        metadata = metadata.read_backup_metadata(f)
     res = verify_backup(rootdir, metadata)
     print res
