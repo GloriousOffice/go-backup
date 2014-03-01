@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import os
+import metadata
 import utils
+from collections import namedtuple
 
 VerificationResult = namedtuple('VerificationResult', ['changed', 'missing',
                                                        'unexpected',
@@ -48,7 +50,7 @@ def scan_backup(rootdir):
 
 strict_metadata = ['atime', 'mtime', 'ctime', 'user', 'group', 'permissions']
 
-def lenient_metadata_dictionary(metadata):
+def lenient_metadata(metadata):
     d = metadata._asdict()
     result = {}
     for k in d.keys():
@@ -58,8 +60,7 @@ def lenient_metadata_dictionary(metadata):
 
 
 def lenient_match(metadata1, metadata2):
-    return lenient_metadata_dictionary(metadata1)
-        == lenient_metadata_dictionary(metadata2)
+    return lenient_metadata(metadata1) == lenient_metadata(metadata2)
 
 
 def verify_backup(rootdir, metadata, num_threads=None):
