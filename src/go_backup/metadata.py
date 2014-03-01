@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-import grp
+import json
 import os
-import pwd
 import subprocess
 import tempfile
 import utils
@@ -13,7 +12,7 @@ FileMetadata = namedtuple('FileMetadata', default_metadata + ['sha1', 'sha256', 
 DirectoryMetadata = namedtuple('DirectoryMetadata', default_metadata)
 SymlinkMetadata = namedtuple('SymlinkMetadata', default_metadata + ['native_target'])
 
-BackupMetadata = namedtuple('BackupMetadata', ['timestamp', 'cmdline', 'files', 'symlinks', 'directories'])
+BackupMetadata = namedtuple('BackupMetadata', ['files', 'symlinks', 'directories'])
 
 
 def get_default_metadata(rootdir, path, uid_map=None, gid_map=None):
@@ -21,9 +20,9 @@ def get_default_metadata(rootdir, path, uid_map=None, gid_map=None):
     defined above) and entries are the results of the corresponding
     os.stat call on native_path."""
     if uid_map is None:
-        uid_map = get_uid_name_map()
+        uid_map = utils.get_uid_name_map()
     if gid_map is None:
-        gid_map = get_gid_name_map()
+        gid_map = utils.get_gid_name_map()
     native_path = utils.build_native_path(rootdir, path)
     stat = os.lstat(native_path)
 
@@ -62,17 +61,21 @@ def get_symlink_metadata(rootdir, path, uid_map=None, gid_map=None):
     metadata['native_target'] = os.readlink(native_path)
     return SymlinkMetadata(**metadata)
 
+def write_backup_metadata(f, metadata):
+    d = {'files': [dict(t.__dict__) for t in metadata.files],
+         'symlinks': [dict(t.__dict__) for t in metadata.symlinks],
+         'directories': [dict(t.__dict__) for t in metadata.directories]}
+    json.dump(d, f, sort_keys=True, indent=4, separators=(',', ': '))
 
-def get_uid_name_map():
-    """Return a dictionary that maps numerical user ID's to user
-    names."""
-    return dict((p.pw_uid, p.pw_name) for p in pwd.getpwall())
-
-
-def get_gid_name_map():
-    """Return a dictionary that maps numerical group ID's to group
-    names."""
-    return dict((g.gr_gid, g.gr_name) for g in grp.getgrall())
+def read_backup_metadata(f):
+    d = json.load(d)
+    if set(d.keys()) != set(BackupMetadata._fields):
+        raise ValueError(("Set of backup metadata keys ('%s') does not match expected ('%s')." %
+                          (sorted(d.keys()), sorted(BackupMetadata._fields))))
+    metadata = BackupMetadata(files=[FileMetadata(**m) for m in d['files']],
+                              symlinks=[SymlinkMetadata(**m) for m in d['symlinks']],
+                              direcories=[DirectoryMetadata(**m) for m in d['directories']])
+    return metadata
 
 if __name__ == "__main__":
     pass
