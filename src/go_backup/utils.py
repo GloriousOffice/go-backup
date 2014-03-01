@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+import grp
 import os.path
+import pwd
 
 def build_native_path(rootdir, path):
     """Returns a native path obtained by concatenating rootdir with a
@@ -20,6 +22,7 @@ def build_native_path(rootdir, path):
     if path.startswith(os.sep):
         path = path[len(os.sep):]
     return os.path.join(rootdir, path)
+
 
 def get_path_from_native_path(rootdir, native_path):
     """Returns a path given a native path.
@@ -42,6 +45,18 @@ def get_path_from_native_path(rootdir, native_path):
         return native_path[len(rootdir):]
     else:
         raise ValueError('Native path {} is not a valid path for root directory {}.'.format(rootdir, native_path))
+
+
+def get_uid_name_map():
+    """Return a dictionary that maps numerical user ID's to user
+    names."""
+    return dict((p.pw_uid, p.pw_name) for p in pwd.getpwall())
+
+
+def get_gid_name_map():
+    """Return a dictionary that maps numerical group ID's to group
+    names."""
+    return dict((g.gr_gid, g.gr_name) for g in grp.getgrall())
 
 # Backported from Python 3.3
 # (http://hg.python.org/cpython/file/c440c5893d09/Lib/stat.py)
@@ -85,6 +100,7 @@ def filemode(mode):
         else:
             perm.append("-")
     return "".join(perm)
+
 
 if __name__ == "__main__":
     import doctest
