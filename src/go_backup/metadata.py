@@ -61,11 +61,20 @@ def get_symlink_metadata(rootdir, path, uid_map=None, gid_map=None):
     metadata['native_target'] = os.readlink(native_path)
     return SymlinkMetadata(**metadata)
 
+
+def get_backup_metadata(rootdir, files, symlinks, directories, digest_map, uid_map=None, gid_map=None):
+    metadata_files = [get_file_metadata(rootdir, p, digest_map=digest_map, uid_map=uid_map, gid_map=gid_map) for p in files]
+    metadata_symlinks = [get_symlink_metadata(rootdir, p, uid_map=uid_map, gid_map=gid_map) for p in symlinks]
+    metadata_directories = [get_directory_metadata(rootdir, p, uid_map=uid_map, gid_map=gid_map) for p in directories]
+    return BackupMetadata(files=metadata_files, symlinks=metadata_symlinks, directories=metadata_directories)
+
+
 def write_backup_metadata(f, metadata):
-    d = {'files': [dict(t.__dict__) for t in metadata.files],
-         'symlinks': [dict(t.__dict__) for t in metadata.symlinks],
-         'directories': [dict(t.__dict__) for t in metadata.directories]}
-    json.dump(d, f, sort_keys=True, indent=4, separators=(',', ': '))
+    d = {'files': [t.__dict__ for t in metadata.files],
+         'symlinks': [t.__dict__ for t in metadata.symlinks],
+         'directories': [t.__dict__ for t in metadata.directories]}
+    json.dump(d, f, indent=4, separators=(',', ': '))
+
 
 def read_backup_metadata(f):
     d = json.load(d)
@@ -76,6 +85,8 @@ def read_backup_metadata(f):
                               symlinks=[SymlinkMetadata(**m) for m in d['symlinks']],
                               direcories=[DirectoryMetadata(**m) for m in d['directories']])
     return metadata
+
+    
 
 if __name__ == "__main__":
     pass

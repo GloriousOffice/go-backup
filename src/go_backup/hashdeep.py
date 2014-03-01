@@ -97,3 +97,8 @@ if __name__ == "__main__":
 
         for f in filenames:
             print metadata.get_file_metadata(rootdir, f, result)
+
+        backup_metadata = metadata.get_backup_metadata(rootdir, filenames, [], [], result)
+        import sys
+        metadata.write_backup_metadata(sys.stdout, backup_metadata)
+
