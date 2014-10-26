@@ -54,19 +54,21 @@ def scan_backup(rootdir):
     return ScanResult(files, symlinks, directories, errors, ignored)
 
 
-strict_metadata = ['atime', 'mtime', 'ctime', 'user', 'group', 'permissions']
+transient_metadata = ['atime', 'mtime', 'ctime', 'user', 'group', 'permissions']
 
-def lenient_metadata(mdata):
+def strict_metadata(mdata):
+    """Returns metadata items that are not considered transient, in particular, it
+    will return hashes/sizes for files and native targets for symlinks."""
     d = mdata._asdict()
     result = {}
     for k in d.keys():
-        if k not in strict_metadata:
+        if k not in transient_metadata:
             result[k] = d[k]
     return result
 
 
 def lenient_match(mdata1, mdata2):
-    return lenient_metadata(mdata1) == lenient_metadata(mdata2)
+    return strict_metadata(mdata1) == strict_metadata(mdata2)
 
 
 def verify_backup(rootdir, mdata, num_threads=None):
