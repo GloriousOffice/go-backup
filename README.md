@@ -11,7 +11,7 @@ As default, go-backup is invoked with `go-backup src dest`. Then, the workflow i
 1. Verify the current backup (residing in `dest`) with the previously recorded hash digest data from `dest/.go_backup/backup_<most-recent-timestamp>/metadata.json` (after checking this file with the corresponding `hashsums.json`).
 2. Compute the hashes for the source directory `src`.
 3. Compare the hashes of the backup and the source directory.
-4. Move files for which the hashes changed or files which were deleted into `dest/.go_backup/backup_<current-timestamp>/diff_to_prev/diff_files`.
+4. Move files for which the hashes changed or files which were deleted into `dest/.go_backup/backup_<current-timestamp>/old_files`.
 5. Copy all changed/new files from `src` to `dest`.
 6. Verify the backup at `dest` against the hash file of `src`.
 
@@ -33,11 +33,11 @@ go-backup will maintain the following structure under `dest/.go_backup`:
 * a directory `backup_YYYY_MM_DD_HH_MM_SS` for each go-backup invocation containing:
   * a `metadata.json` containing an entry for each file/directory/symbolic link (listing its meta data and checksums (if applicable));
   * a `log.txt`
-  * a `diff_files` directory containing moved/changed files from previous backup iterations. For example, assume that today's version of `src` does not contain `src/foo`, while it was backed up in `dest/foo` during the previous go-backup run. Then go-backup would move `dest/foo` to `dest/oldfiles/<current-timestamp>/foo`;
+  * a `old_files` directory containing files that existed in previous backup iteration but got changed/deleted in the current one. For example, assume that today's version of `src` does not contain `src/foo`, while it was backed up in `dest/foo` during the previous go-backup run. Then go-backup would move `dest/foo` to `dest/.go_backup/backup_YYYY_MM_DD_HH_MM_SS/oldfiles/HASH`, where `HASH` is a hash of `dest/foo`;
   * a `prev_metadata.json` file describing the structure of `src` before the `go-backup` invocation;
   * and `hashsums.json` containing checksums of `metadata.json`, `prev_metadata.json` and `log.txt`
 
-Storing `prev_metadata.json` which, excluding failure cases, will coincide with `metadata.json` of previous backup is intentional: we want to be able to simply delete old `backup_...` directories, without compromising our ability to restore-to-previous of all following backups.
+Storing `prev_metadata.json` which, if not corrupted, will coincide with `metadata.json` of previous backup is intentional: we want to be able to simply delete old `backup_...` directories, without compromising our ability to restore-to-previous of all following backups.
 
 Format of `metadata.json`
 -------------------------
