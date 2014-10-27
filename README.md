@@ -16,7 +16,7 @@ As a default, go-backup is invoked with `go-backup src dest`. Then, the workflow
 5. Copy all changed/new files from `src` to `dest`.
 6. Verify the backup at `dest` against the metadata file `dest/.go_backup/backup_<current-timestamp>/metadata.json`.
 
-Hashing is done using `hashdeep` and copying/moving is done using `rsync`.
+Hashing is done using `hashdeep`.
 
 Patterns
 --------
@@ -90,7 +90,6 @@ The output of go-backup will include:
 * all paths ignored (e.g. named pipes);
 * difference between previous go-backup output and the current state of `src`;
 * statistics.
-* output of `rsync`.
 
 Handling of special cases
 -------------------------
