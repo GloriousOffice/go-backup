@@ -80,7 +80,7 @@ A `metadata.json` contains a dictionary with the following structure:
 
 \* omitting ":" from the time portion so that it matches the directory name under `.go_backup`  
 \*\* the floating point value is output with nine decimal places after the period  
-\*\*\* more precisely, we use a back-ported implementation of [`stat.filemode`](https://docs.python.org/3/library/stat.html#stat.filemode) see `src/utils.py`
+\*\*\* more precisely, we use a back-ported implementation of [`stat.filemode`](https://docs.python.org/3/library/stat.html#stat.filemode) see `src/go_backup/utils.py`
 
 Logging
 -------
