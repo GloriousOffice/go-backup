@@ -2,6 +2,7 @@ go-backup
 =========
 
 go-backup is a backup tool.
+go-backup places special emphasis on *data integrity* and stores cryptographic check sums with ever backup.
 
 Workflow
 --------
@@ -93,7 +94,6 @@ Restoring data
 
 Should be as easy as just copying the `dest` back over to `src` (ignoring `dest/.go_backup` folder, if older versions of files are not needed).
 
-(TODO: provide tools?)
 
 Bibliographic notes
 -------------------
