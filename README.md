@@ -8,10 +8,10 @@ Workflow
 
 As a default, go-backup is invoked with `go-backup src dest`. Then, the workflow is as follows:
 
-1. Verify the current backup (residing in `dest`) with the previously recorded hash digest data from `dest/.go_backup/backup_<timestamp-of-most-recent-backup>/metadata.json` (after checking this file with the corresponding `hashsums.json`). If this check fails the back up is aborted, but the step can be skipped by `--dont-verify-previous-backup` option.
+1. Verify the current backup (residing in `dest`) with the previously recorded hash digest data from `dest/.go_backup/backup_<timestamp-of-most-recent-backup>/metadata.json` (after checking this file with the corresponding `hashsums.json`). If this check fails the back up is aborted unless `--ignore-initial-verification` option is specified.
 2. Compute the hashes for the source directory `src` and write the metadata to  `dest/.go_backup/backup_<current-timestamp>/metadata.json`
-3. Compare the hashes of the backup and the source directory by comparing the two `.json` files described above.
-4. Move files for which the hashes changed or files which were deleted into `dest/.go_backup/backup_<current-timestamp>/old_files`.
+3. Compare the hashes of the backup and the source directory by comparing the content of the two `.json` files described above.
+4. Move files for which the hashes changed or files which were deleted into `dest/.go_backup/backup_<current-timestamp>/old_files`. The `old_files` directory has a flat structure, where each filename is the hash of its contents.
 5. Copy all changed/new files from `src` to `dest`.
 6. Verify the backup at `dest` against the metadata file `dest/.go_backup/backup_<current-timestamp>/metadata.json`.
 
@@ -20,7 +20,7 @@ Hashing is done using `hashdeep` and copying/moving is done using `rsync`.
 Patterns
 --------
 
-go-backup expects a file with include/exclude patterns in `src/.go_backup_patterns`. All lines in file must be either comments (starting with `#`), include patterns (matching `+ /dir/ect/ory` or `+ /file/name`) and exclude patterns (matching `- /dir/ect/ory` or `- /file/name`). The last matching pattern wins. The default is to "include" (so empty pattern file would be the same as asking to backup entire `src`). All patterns *look like absolute paths* (e.g. `+ /`), but are interpreted *relative* to `src` and `dest`. The paths are what you would see after a `chroot src`.
+go-backup expects a file with include/exclude patterns in `src/.go_backup_patterns`. All lines in file must be either comments (starting with `#`), include patterns (matching `+ /dir/ect/ory` or `+ /file/name`) and exclude patterns (matching `- /dir/ect/ory` or `- /file/name`). Above "to match" means that pattern either coincides with the file/directory name or specifies a directory that contains the file/directory name it is matched against. The last matching pattern wins. The default is to "include" (so empty pattern file would be the same as asking to backup entire `src`). All patterns *look like absolute paths* (e.g. `+ /`), but are interpreted *relative* to `src` and `dest`. The paths are what you would see after a `chroot src`.
 
 Directory structure
 -------------------
