@@ -34,9 +34,9 @@ go-backup will maintain the following structure under `dest/.go_backup`:
 * a time-stamped directory `backup_YYYY-MM-DDTHHMMSS±HHMM` (where `±HHMM` denotes the time-zone offset) for each go-backup invocation containing:
   * a `metadata.json` containing an entry for each file/directory/symbolic link (listing its meta data and checksums (if applicable));
   * a `patterns.txt` containing the contents of `.go_backup_patterns` file used
-  * a `log.txt` containing the complete output of the particular `go-backup` invocation;
+  * a `log.txt` containing the complete output of the particular go-backup invocation;
   * a `old_files` directory containing files that existed in previous backup iteration but got changed/deleted in the current one. For example, assume that today's version of `src` does not contain `src/foo`, while it was backed up in `dest/foo` during the previous go-backup run. Then go-backup would move `dest/foo` to `dest/.go_backup/backup_<current-timestamp>/oldfiles/HASH`, where `HASH` is a hash of `dest/foo`;
-  * a `prev_metadata.json` file describing the structure of `dest` before the `go-backup` invocation;
+  * a `prev_metadata.json` file describing the structure of `dest` before the go-backup invocation;
   * and `hashsums.json` containing checksums of `metadata.json`, `prev_metadata.json`, `patterns.txt` and `log.txt`
 
 Storing `prev_metadata.json` which, if not corrupted, will coincide with `metadata.json` of previous backup is intentional: we want to be able to simply delete old `backup_...` directories, without compromising our ability to restore-to-previous of all following backups.
@@ -87,17 +87,19 @@ Logging
 
 The output of go-backup will include:
 * all errors encountered;
-* all paths ignored (e.g. named pipes);
-* difference between previous go-backup output and the current state of `src`;
+* all excluded files or directories in `src`, but not files/directories within an excluded directory;
+* all paths ignored in `src` (e.g. named pipes, block devices, etc.);
+* all mount points encountered (note that `go-backup` won't recurse in a mount point);
+* new, changed or deleted files between the current and the previous go-backup runs;
 * statistics.
 
 Handling of special cases
 -------------------------
 
-With respect to specal file types go-backup will do the following:
-* do not follow symlinks, but pass them over for copying to `rsync`;
+With respect to special file types go-backup will do the following:
+* do not follow symlinks, but report them in the metadata file and recreate them under `dest`;
 * treat hardlinks as normal files/directories;
-* copy over directories that are mount points, but do *not* recurse into them;
+* for directories that are mount points create their equivalents under `dest`, but do no *not* recurse into them;
 * ignore block devices, FIFOs and other special file types.
 
 (TODO: have we missed anything?)
