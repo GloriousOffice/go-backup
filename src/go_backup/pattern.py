@@ -5,13 +5,26 @@ import re
 import utils
 from collections import namedtuple
 
+"""The data structure containing matching results for given patterns."""
 MatchingResult = namedtuple('MatchingResult', ['filenames', 'symlinks', 'directories', 'errors', 'ignored'])
 
+"""Constants indicating whether a pattern should be included or excluded."""
 INCLUDE = 1
 EXCLUDE = 2
 
 def parse_pattern_file(f):
+    """Return a list of patterns parsed from the file object f
+
+    The patterns are returned as a list of pairs (modifier, pattern), where
+    modifier is either the constant INCLUDE or the constant EXCLUDE. pattern
+    is the pathname affected by the inclusion / exclusion rule. The list is
+    in the same order as the pattern file f, i.e., in order of priority (later
+    rules override earlier rules).
+
+    In case of an invalid pattern, the function raises a ValueError exception.
+    """
     res = []
+    # Note that in the regex, {} is replaced by os.sep.
     regex = re.compile('^([+-])\W+({}.*)$'.format(re.escape(os.sep)))
     for line in f:
         line = line.rstrip()
@@ -22,13 +35,21 @@ def parse_pattern_file(f):
             if not r:
                 raise ValueError('Line "{}" is not a valid pattern.'.format(
                         line))
-            if r.groups()[0] == '+':
-                res.append((INCLUDE, r.groups()[1]))
-            elif r.groups()[0] == '-':
-                res.append((EXCLUDE, r.groups()[1]))
+            modifier = r.groups()[0]
+            pattern = r.groups()[1]
+            # For directories, no trailing '/' is necessary according to our
+            # pattern file format. In order to avoid confusion, we report an
+            # error if we find a trailing '/'.
+            if pattern != os.sep and pattern.endswith(os.sep):
+                raise ValueError('Line "{}" is not a valid pattern.'.format(
+                        line))
+            if modifier == '+':
+                res.append((INCLUDE, pattern))
+            elif modifier == '-':
+                res.append((EXCLUDE, pattern))
             else:
                 raise ValueError('Unknown pattern modifier "{}".'.format(
-                        r.groups()[0]))
+                        modifier))
     return res
 
 
