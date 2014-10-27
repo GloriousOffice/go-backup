@@ -30,11 +30,11 @@ go-backup expects the following structure under `src`:
 
 go-backup will maintain the following structure under `dest/.go_backup`:
 * a `version.txt` containing the version of the maintained structures; this will get bumped up with every incompatible change to go-backup;
-* a directory `backup_YYYY_MM_DD_HH_MM_SS` for each go-backup invocation containing:
+* a time-stamped directory `backup_YYYY-MM-DDTHHMMSS±HHMM` (where `±HHMM` denotes the time-zone offset) for each go-backup invocation containing:
   * a `metadata.json` containing an entry for each file/directory/symbolic link (listing its meta data and checksums (if applicable));
-  * a `log.txt`
-  * a `old_files` directory containing files that existed in previous backup iteration but got changed/deleted in the current one. For example, assume that today's version of `src` does not contain `src/foo`, while it was backed up in `dest/foo` during the previous go-backup run. Then go-backup would move `dest/foo` to `dest/.go_backup/backup_YYYY_MM_DD_HH_MM_SS/oldfiles/HASH`, where `HASH` is a hash of `dest/foo`;
-  * a `prev_metadata.json` file describing the structure of `src` before the `go-backup` invocation;
+  * a `log.txt` containing the complete output of the particular `go-backup` invocation;
+  * a `old_files` directory containing files that existed in previous backup iteration but got changed/deleted in the current one. For example, assume that today's version of `src` does not contain `src/foo`, while it was backed up in `dest/foo` during the previous go-backup run. Then go-backup would move `dest/foo` to `dest/.go_backup/backup_<current-timestamp>/oldfiles/HASH`, where `HASH` is a hash of `dest/foo`;
+  * a `prev_metadata.json` file describing the structure of `dest` before the `go-backup` invocation;
   * and `hashsums.json` containing checksums of `metadata.json`, `prev_metadata.json` and `log.txt`
 
 Storing `prev_metadata.json` which, if not corrupted, will coincide with `metadata.json` of previous backup is intentional: we want to be able to simply delete old `backup_...` directories, without compromising our ability to restore-to-previous of all following backups.
