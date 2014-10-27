@@ -2,7 +2,7 @@ go-backup
 =========
 
 go-backup is a backup tool.
-go-backup places special emphasis on *data integrity* and stores cryptographic check sums with ever backup.
+go-backup places special emphasis on *data integrity* and stores cryptographic checksums with every backup.
 
 Workflow
 --------
@@ -102,7 +102,6 @@ With respect to special file types go-backup will do the following:
 * for directories that are mount points create their equivalents under `dest`, but do no *not* recurse into them;
 * ignore block devices, FIFOs and other special file types.
 
-(TODO: have we missed anything?)
 
 Restoring data
 --------------
