@@ -6,14 +6,14 @@ go-backup is a backup tool.
 Workflow
 --------
 
-As default, go-backup is invoked with `go-backup src dest`. Then, the workflow is as follows:
+As a default, go-backup is invoked with `go-backup src dest`. Then, the workflow is as follows:
 
-1. Verify the current backup (residing in `dest`) with the previously recorded hash digest data from `dest/.go_backup/backup_<most-recent-timestamp>/metadata.json` (after checking this file with the corresponding `hashsums.json`).
-2. Compute the hashes for the source directory `src`.
-3. Compare the hashes of the backup and the source directory.
+1. Verify the current backup (residing in `dest`) with the previously recorded hash digest data from `dest/.go_backup/backup_<timestamp-of-most-recent-backup>/metadata.json` (after checking this file with the corresponding `hashsums.json`). If this check fails the back up is aborted, but the step can be skipped by `--dont-verify-previous-backup` option.
+2. Compute the hashes for the source directory `src` and write the metadata to  `dest/.go_backup/backup_<current-timestamp>/metadata.json`
+3. Compare the hashes of the backup and the source directory by comparing the two `.json` files described above.
 4. Move files for which the hashes changed or files which were deleted into `dest/.go_backup/backup_<current-timestamp>/old_files`.
 5. Copy all changed/new files from `src` to `dest`.
-6. Verify the backup at `dest` against the hash file of `src`.
+6. Verify the backup at `dest` against the metadata file `dest/.go_backup/backup_<current-timestamp>/metadata.json`.
 
 Hashing is done using `hashdeep` and copying/moving is done using `rsync`.
 
