@@ -37,10 +37,9 @@ def parse_pattern_file(f):
                         line))
             modifier = r.groups()[0]
             pattern = r.groups()[1]
-            # For directories, no trailing '/' is necessary according to our
-            # pattern file format. In order to avoid confusion, we report an
-            # error if we find a trailing '/'.
-            if pattern != os.sep and pattern.endswith(os.sep):
+            # Check that the pattern is normalized
+            normalized_pattern = os.path.normpath(pattern)
+            if pattern != normalized_pattern:
                 raise ValueError('Line "{}" is not a valid pattern.'.format(
                         line))
             if modifier == '+':
@@ -54,23 +53,27 @@ def parse_pattern_file(f):
 
 
 def path_matches_single_pattern(path, pattern):
-    """Returns True iff path matches pattern.
+    """Return True if and only if the given path matches the given pattern.
 
-    >>> path_matches_single_pattern('/foo/bar', '/foo')
-    True
-
-    >>> path_matches_single_pattern('/foobar', '/foo')
-    False
-
-    >>> path_matches_single_pattern('/foo', '/')
-    True
+    Both arguments (path and pattern) must be in our chroot-like format, i.e.,
+    start with a '/' and be normalized (no '..', etc.). A path matches a pattern    if the path is either equal to the pattern or the pattern is a directory
+    and path is contained in the directory. In particular, this means that the
+    path '/foobar' does not match the pattern '/foo'.
     """
+
+    # check input convention
     if not (path.startswith(os.sep) and pattern.startswith(os.sep)):
         raise ValueError('Both file name ("{}") and pattern ("{}") must start with "{}".'.format(path, pattern, os.sep))
 
     norm_path = os.path.normpath(path)
-    norm_pattern = os.path.normpath(pattern)
+    if norm_path != path:
+      raise ValueError('Path must be normalized.')
 
+    norm_pattern = os.path.normpath(pattern)
+    if norm_pattern != pattern:
+      raise ValueError('Pattern must be normalized.')
+
+    # perform actual pattern matching check
     if norm_path == norm_pattern:
         # if pattern is a path, then only the path itself can match
         return True
@@ -86,8 +89,8 @@ def path_matches_single_pattern(path, pattern):
         return False
 
 
-def pattern_decision(path, patterns, default_decision=INCLUDE):
-    res = default_decision
+def pattern_decision(path, patterns):
+    res = INCLUDE
     for p in patterns:
         if path_matches_single_pattern(path, p[1]):
             res = p[0]
