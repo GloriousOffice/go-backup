@@ -3,47 +3,45 @@ import grp
 import os.path
 import pwd
 
+def ensure_normalized(path):
+    """Raise a ValueError exception if path does not equal its normalized version."""
+    normalized_path = os.path.normpath(path)
+    if path != normalized_path:
+        raise ValueError('Path {} does not equal its normalized version {}'.format(path, normalized_path))
+
+
+def ensure_absolute(path):
+    """Raise a ValueError if a path is not absolute, i.e. does not start with the path separator."""
+    if not path.startswith(os.sep):
+        raise ValueError('Path {} is not absolute (does not start with {})'.format(path, os.sep))
+
+
 def build_native_path(rootdir, path):
-    """Returns a native path obtained by concatenating rootdir with a
-    path that's absolute in the chdir of that rootdir.
+    """Return a native path obtained by concatenating rootdir with a
+    path that's absolute in the chdir of that rootdir."""
+    ensure_normalized(rootdir)
+    ensure_normalized(path)
+    ensure_absolute(rootdir)
 
-    >>> build_native_path('/home/x', '/foo')
-    '/home/x/foo'
-
-    >>> build_native_path('/home/x', '/foo/bar')
-    '/home/x/foo/bar'
-
-    >>> build_native_path('/', '/foo/bar')
-    '/foo/bar'
-
-    >>> build_native_path('/', '/')
-    '/'
-    """
     if path.startswith(os.sep):
         path = path[len(os.sep):]
-    return os.path.join(rootdir, path)
+    if path:
+        return os.path.join(rootdir, path)
+    else:
+        return rootdir
 
 
 def get_path_from_native_path(rootdir, native_path):
-    """Returns a path given a native path.
+    """Return a path given a native path."""
+    ensure_normalized(rootdir)
+    ensure_normalized(native_path)
+    ensure_absolute(rootdir)
+    ensure_absolute(native_path)
 
-    >>> get_path_from_native_path('/home/x', '/home/x/foo')
-    '/foo'
-
-    >>> get_path_from_native_path('foo', 'foo/bar')
-    '/bar'
-
-    >>> get_path_from_native_path('/home/x', '/home/x/foo/bar')
-    '/foo/bar'
-
-    >>> get_path_from_native_path('/', '/foo/bar')
-    '/foo/bar'
-
-    >>> get_path_from_native_path('/', '/')
-    '/'
-    """
     if rootdir == os.sep:
         return native_path
+    elif native_path == rootdir:
+        return os.sep
     elif native_path.startswith(rootdir + os.sep):
         return native_path[len(rootdir):]
     else:
@@ -51,14 +49,12 @@ def get_path_from_native_path(rootdir, native_path):
 
 
 def get_uid_name_map():
-    """Return a dictionary that maps numerical user ID's to user
-    names."""
+    """Return a dictionary that maps numerical user ID's to user names."""
     return dict((p.pw_uid, p.pw_name) for p in pwd.getpwall())
 
 
 def get_gid_name_map():
-    """Return a dictionary that maps numerical group ID's to group
-    names."""
+    """Return a dictionary that maps numerical group ID's to group names."""
     return dict((g.gr_gid, g.gr_name) for g in grp.getgrall())
 
 # Backported from Python 3.3
@@ -103,8 +99,3 @@ def filemode(mode):
         else:
             perm.append("-")
     return "".join(perm)
-
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

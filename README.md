@@ -109,6 +109,11 @@ Restoring data
 Should be as easy as just copying the `dest` back over to `src` (ignoring `dest/.go_backup` folder, if older versions of files are not needed).
 
 
+Requirements
+------------
+
+go-backup depends on `hashdeep` for hashing and `pytest` for tests. It has only been tested on Unix-like systems (in particular, Linux and OS X). File name handling will likely require changes to work on Windows, due to the different path separators.
+
 Bibliographic notes
 -------------------
 
