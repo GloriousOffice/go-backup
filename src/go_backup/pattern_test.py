@@ -144,3 +144,77 @@ def test_pattern_decision_simple_4():
 
 def test_pattern_decision_simple_5():
     assert not pd_wrapper('/foo', [(E, '/'), (I, '/foo/bar'), (E, '/fo')])
+
+def test_pattern_decision_complicated_1():
+    assert pd_wrapper('/foo/bar/baz', [(E, '/foo/bar'), (I, '/foo/bar/baz')])
+
+def test_pattern_decision_complicated_2():
+    assert not pd_wrapper('/foo/bar/baz', [(I, '/foo/bar'), (E, '/foo/bar/baz')])
+
+def test_pattern_decision_complicated_3():
+    assert pd_wrapper('/x/y/z', [(I, '/foo/bar'), (E, '/foo/bar/baz'), (E, '/y')])
+
+def test_pattern_decision_complicated_4():
+    assert pd_wrapper('/x/y/z', [(I, '/foo/bar'), (E, '/foo/bar/baz'), (E, '/x/y/zz')])
+
+def test_pattern_decision_complicated_5():
+    assert not pd_wrapper('/x/y/z', [(I, '/foo/bar'), (E, '/x'), (I, '/x'), (E, '/x')])
+
+def test_pattern_decision_complicated_6():
+    assert pd_wrapper('/x/y', [(E, '/'), (I, '/x'), (E, '/x/y/z')])
+
+def test_pattern_decision_complicated_7():
+    assert pd_wrapper('/x/z', [(E, '/'), (I, '/x'), (E, '/x/y/z')])
+
+def test_pattern_decision_complicated_8():
+    assert pd_wrapper('/x/y/a', [(E, '/'), (I, '/x'), (E, '/x/y/z')])
+
+def test_pattern_decision_complicated_9():
+    assert not pd_wrapper('/x/y/z', [(E, '/'), (I, '/x'), (E, '/x/y/z')])
+
+def test_pattern_decision_complicated_10():
+    assert not pd_wrapper('/x/y/z/a', [(E, '/'), (I, '/x'), (E, '/x/y/z')])
+
+def test_pattern_decision_check_input_1():
+    with pytest.raises(ValueError):
+        pd_wrapper('', [])
+
+def test_pattern_decision_check_input_2():
+    with pytest.raises(ValueError):
+        pd_wrapper('/foo/', [])
+
+def test_pattern_decision_check_input_3():
+    with pytest.raises(ValueError):
+        pd_wrapper('/foo/../bar', [])
+
+def test_pattern_decision_check_input_4():
+    with pytest.raises(ValueError):
+        pd_wrapper('/foo/./bar', [])
+
+def test_pattern_decision_check_input_5():
+    with pytest.raises(ValueError):
+        pd_wrapper('/foo//bar', [])
+
+def test_pattern_decision_check_input_6():
+    with pytest.raises(ValueError):
+        pd_wrapper('/foo', [(9, '/bar')])
+
+def test_pattern_decision_check_input_7():
+    with pytest.raises(ValueError):
+        pd_wrapper('/foo', [(I, '/bar/')])
+
+def test_pattern_decision_check_input_8():
+    with pytest.raises(ValueError):
+        pd_wrapper('/foo', [(I, '/bar/../foo')])
+
+def test_pattern_decision_check_input_9():
+    with pytest.raises(ValueError):
+        pd_wrapper('/foo', [(I, '')])
+
+def test_pattern_decision_check_input_9():
+    with pytest.raises(ValueError):
+        pd_wrapper('/foo', [(I, '/bar//foo')])
+
+def test_pattern_decision_check_input_10():
+    with pytest.raises(ValueError):
+        pd_wrapper('/foo', [(I, '/bar/./foo')])

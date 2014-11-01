@@ -37,11 +37,7 @@ def parse_pattern_file(f):
                         line))
             modifier = r.groups()[0]
             pattern = r.groups()[1]
-            # Check that the pattern is normalized
-            normalized_pattern = os.path.normpath(pattern)
-            if pattern != normalized_pattern:
-                raise ValueError('Line "{}" is not a valid pattern.'.format(
-                        line))
+            utils.ensure_normalized(pattern)
             if modifier == '+':
                 res.append((INCLUDE, pattern))
             elif modifier == '-':
@@ -65,23 +61,18 @@ def path_matches_single_pattern(path, pattern):
     if not (path.startswith(os.sep) and pattern.startswith(os.sep)):
         raise ValueError('Both file name ("{}") and pattern ("{}") must start with "{}".'.format(path, pattern, os.sep))
 
-    norm_path = os.path.normpath(path)
-    if norm_path != path:
-      raise ValueError('Path must be normalized.')
-
-    norm_pattern = os.path.normpath(pattern)
-    if norm_pattern != pattern:
-      raise ValueError('Pattern must be normalized.')
+    utils.ensure_normalized(path)
+    utils.ensure_normalized(pattern)
 
     # perform actual pattern matching check
-    if norm_path == norm_pattern:
+    if path == pattern:
         # if pattern is a path, then only the path itself can match
         return True
-    elif norm_path.startswith(norm_pattern + os.sep):
+    elif path.startswith(pattern + os.sep):
         # if pattern is a subdirectory of root then path must
         # start with "pattern/"
         return True
-    elif norm_pattern == os.sep:
+    elif pattern == os.sep:
         # if a pattern is root itself then any path matches
         return True
     else:
@@ -90,8 +81,18 @@ def path_matches_single_pattern(path, pattern):
 
 
 def pattern_decision(path, patterns):
+    """Compute the include / exclude decision for a given path and patterns.
+
+    The parameter patterns is a list of patterns where each pattern is a pair
+    of (decision, pattern_string) as returned by parse_pattern_file. The
+    last matching pattern in the list determines the final decision.
+    """
+    utils.ensure_normalized(path)
     res = INCLUDE
     for p in patterns:
+        utils.ensure_normalized(p[1])
+        if p[0] != INCLUDE and p[0] != EXCLUDE:
+          raise ValueError('Invalid pattern: unknown decision')
         if path_matches_single_pattern(path, p[1]):
             res = p[0]
     return res
