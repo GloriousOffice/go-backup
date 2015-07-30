@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import errno
 import grp
 import os.path
 import pwd
@@ -99,3 +100,14 @@ def filemode(mode):
         else:
             perm.append("-")
     return "".join(perm)
+
+def mkdir_p(directory):
+    """Create a directory including all subdirectories leading to it, if
+    necessary. Unlike os.makedirs() this function does not raise an
+    error if the directory already exists.
+    """
+    try:
+        os.makedirs(directory)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise e
