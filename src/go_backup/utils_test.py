@@ -117,6 +117,26 @@ def test_get_path_from_native_path_out_of_dir_path_1():
     with pytest.raises(ValueError):
         res = utils.get_path_from_native_path(rootdir, native_path)
 
+def test_get_path_parts_1():
+    path = '/foo/bar/baz'
+    res = utils.get_path_parts(path)
+    assert list(res) == ['foo', 'bar', 'baz']
+
+def test_get_path_parts_2():
+    path = '/foo/bar/baz/'
+    with pytest.raises(ValueError):
+        res = utils.get_path_parts(path)
+
+def test_get_path_parts_3():
+    path = '/'
+    res = utils.get_path_parts(path)
+    assert list(res) == []
+
+def test_get_path_parts_4():
+    path = '/abc'
+    res = utils.get_path_parts(path)
+    assert list(res) == ['abc']
+
 def test_get_uid_name_map_consistency():
     # TODO: maybe mock out in future?
     uid_name_map = utils.get_uid_name_map()

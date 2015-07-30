@@ -49,6 +49,22 @@ def get_path_from_native_path(rootdir, native_path):
         raise ValueError('Native path {} is not a valid path for root directory {}.'.format(rootdir, native_path))
 
 
+def get_path_parts(path):
+    """Split a path into its parts."""
+    ensure_normalized(path)
+    ensure_absolute(path)
+    result = []
+    cur_path = path
+    while True:
+        head, tail = os.path.split(cur_path)
+        if tail != "":
+          result.append(tail)
+          cur_path = head
+        else:
+          break
+    return reversed(result)
+
+
 def get_uid_name_map():
     """Return a dictionary that maps numerical user ID's to user names."""
     return dict((p.pw_uid, p.pw_name) for p in pwd.getpwall())
