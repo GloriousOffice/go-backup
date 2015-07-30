@@ -8,11 +8,9 @@ import utils
 from collections import namedtuple
 
 default_metadata = ['name', 'atime', 'ctime', 'mtime', 'user', 'group', 'permissions']
-FileMetadata = namedtuple('FileMetadata', default_metadata + ['sha1', 'sha256', 'size'])
-DirectoryMetadata = namedtuple('DirectoryMetadata', default_metadata)
-SymlinkMetadata = namedtuple('SymlinkMetadata', default_metadata + ['native_target'])
-
-BackupMetadata = namedtuple('BackupMetadata', ['files', 'symlinks', 'directories'])
+FileNode = namedtuple('FileMetadata', default_metadata + ['hash', 'size'])
+DirectoryNode = namedtuple('DirectoryMetadata', default_metadata + ['children'])
+SymlinkNode = namedtuple('SymlinkMetadata', default_metadata + ['target'])
 
 
 def get_default_metadata(rootdir, path, uid_map=None, gid_map=None):
@@ -28,6 +26,7 @@ def get_default_metadata(rootdir, path, uid_map=None, gid_map=None):
 
     metadata = {}
     metadata['name'] = path
+    # TODO: use strings instead of UNIX epoch seconds
     metadata['atime'] = os.path.getatime(native_path)
     metadata['ctime'] = os.path.getctime(native_path)
     metadata['mtime'] = os.path.getmtime(native_path)
@@ -37,54 +36,94 @@ def get_default_metadata(rootdir, path, uid_map=None, gid_map=None):
     return metadata
 
 
-def get_file_metadata(rootdir, path, digest_map, uid_map=None, gid_map=None):
+def get_file_node(rootdir, path, hash_cache, uid_map=None, gid_map=None):
     metadata = get_default_metadata(rootdir, path, uid_map=uid_map, gid_map=gid_map)
 
     native_path = utils.build_native_path(rootdir, path)
     stat = os.lstat(native_path)
 
-    metadata['sha1'] = digest_map[path].sha1
-    metadata['sha256'] = digest_map[path].sha256
+    metadata['hash'] = hash_cache[native_path]
     metadata['size'] = stat.st_size
-    return FileMetadata(**metadata)
+    return FileNode(**metadata)
 
 
-def get_directory_metadata(rootdir, path, uid_map=None, gid_map=None):
+def get_directory_node(rootdir, path, uid_map=None, gid_map=None):
     metadata = get_default_metadata(rootdir, path, uid_map=uid_map, gid_map=gid_map)
-    return DirectoryMetadata(**metadata)
+    metadata['children'] = []
+    return DirectoryNode(**metadata)
 
 
-def get_symlink_metadata(rootdir, path, uid_map=None, gid_map=None):
+def get_symlink_node(rootdir, path, uid_map=None, gid_map=None):
     metadata = get_default_metadata(rootdir, path, uid_map=uid_map, gid_map=gid_map)
 
     native_path = utils.build_native_path(rootdir, path)
-    metadata['native_target'] = os.readlink(native_path)
-    return SymlinkMetadata(**metadata)
+    metadata['target'] = os.readlink(native_path)
+    return SymlinkNode(**metadata)
 
 
-def get_backup_metadata(rootdir, files, symlinks, directories, digest_map, uid_map=None, gid_map=None):
-    metadata_files = [get_file_metadata(rootdir, p, digest_map=digest_map, uid_map=uid_map, gid_map=gid_map) for p in files]
-    metadata_symlinks = [get_symlink_metadata(rootdir, p, uid_map=uid_map, gid_map=gid_map) for p in symlinks]
-    metadata_directories = [get_directory_metadata(rootdir, p, uid_map=uid_map, gid_map=gid_map) for p in directories]
-    return BackupMetadata(files=metadata_files, symlinks=metadata_symlinks, directories=metadata_directories)
+def get_path_parts(path):
+    result = []
+    cur_path = path
+    while True:
+        head, tail = os.path.split(cur_path)
+        if tail != ""
+          result.append(tail)
+          cur_path = head
+        else:
+          break
+    return reversed(result)
 
 
-def write_backup_metadata(f, metadata):
-    d = {'files': [t.__dict__ for t in metadata.files],
-         'symlinks': [t.__dict__ for t in metadata.symlinks],
-         'directories': [t.__dict__ for t in metadata.directories]}
-    json.dump(d, f, indent=4, separators=(',', ': '))
+def get_metadata_tree(rootdir, files, symlinks, directories, digest_map, uid_map, gid_map):
+   
+    # Step 1: build the directory tree
+    directories.sort()
+    root_node = get_directory_node(rootdir, directories[0], uid_map, gid_map)
+    stack = [(root_node, directories[0]]
+    temp_children_dictionary = {root_node : {}}
 
+    # TODO: add consistency checking to ensure that we are not skipping levels
+    for ii in range(1, len(directories)):
+        cur_name = directories[ii]
 
-def read_backup_metadata(f):
-    d = json.load(f)
-    if set(d.keys()) != set(BackupMetadata._fields):
-        raise ValueError(("Set of backup metadata keys ('%s') does not match expected ('%s')." %
-                          (sorted(d.keys()), sorted(BackupMetadata._fields))))
-    metadata = BackupMetadata(files=[FileMetadata(**m) for m in d['files']],
-                              symlinks=[SymlinkMetadata(**m) for m in d['symlinks']],
-                              directories=[DirectoryMetadata(**m) for m in d['directories']])
-    return metadata
+        while not cur_name.startswith(stack[-1][1]):
+            stack.pop()
+
+        new_node = get_directory_node(rootdir, cur_name, uid_map, gid_map)
+        temp_children_dictionary[new_node] = {}
+        parent = stack[-1][0]
+        parent.children.append(new_node)
+        temp_children_dictionary[parent][os.path.basename(cur_name)] = new_node
+        stack.append((new_node, cur_name))
+
+    # Step 2: insert the symlinks into the directory tree
+    for linkname in symlinks:
+       path_parts = get_path_parts(linkname)[:-1]
+       new_node = get_symlink_node(rootdir, linkname, uid_map, gid_map)
+       cur_node = root_node
+       for cur_dir_name in path_parts:
+          cur_node = temp_children_dictionary[cur_node][cur_dir_name]
+       cur_node.children.append(new_node)
+
+    # Step 3: insert the files into the directory tree
+    for filename in files:
+        path_parts = get_path_parts(filename)[:-1]
+        new_node = get_symlink_node(rootdir, filename, hash_cache, uid_map, gid_map)
+        cur_node = root_node
+        for cur_dir_name in path_parts:
+            cur_node = temp_children_dictionary[cur_node][cur_dir_name]
+        cur_node.children.append(new_node)
+
+    # Step 4: sort the lists of children
+    queue = [root_node]
+    while not queue.empty():
+        cur_node = queue.pop()
+        cur_node.children.sort()
+        for child in cur_node.children:
+            if isinstance(child, DirectoryNode):
+                queue.append(child)
+
+    return root_node
 
 
 if __name__ == "__main__":
