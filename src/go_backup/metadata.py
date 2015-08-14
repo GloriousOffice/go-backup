@@ -67,55 +67,48 @@ def get_metadata_tree(rootdir, files, symlinks, directories, digest_map, uid_map
     # Step 0: empty tree
     root_node = get_directory_node(rootdir, os.sep, uid_map, gid_map)
 
-    # Step 1: insert the directories into the directory tree
-    for dirname in directories:
-        path_parts = get_path_parts(dirname)
+    def find_directory_in_tree(root, dirname):
+        path_parts = utils.get_path_parts(dirname)
         cur_path = os.sep
-        cur_node = root_node
+        cur_node = root
         for part in path_parts:
-            cur_path = os.path.join(cur_path, path)
+            cur_path = os.path.join(cur_path, part)
             if part not in cur_node.children:
                 new_node = get_directory_node(rootdir, cur_path, uid_map, gid_map)
                 cur_node.children[part] = new_node
             cur_node = cur_node.children[part]
+        return cur_node
+
+    # Step 1: insert the directories into the directory tree
+    for full_dirname in directories:
+        dirname, basename = os.path.split(full_dirname)
+        if not basename:
+            # we have handled the root directory separately
+            assert dirname == os.sep
+            continue
+        # Navigate to the right part in the directory tree
+        dir_node = find_directory_in_tree(root_node, dirname)
+        # Insert the directory node
+        new_node = get_directory_node(rootdir, full_dirname, uid_map, gid_map)
+        dir_node.children[basename] = new_node
 
     # Step 2: insert the symlinks into the directory tree
     for linkname in symlinks:
-        temp_path_parts = get_path_parts(linkname)
-        path_parts = temp_path_parts[:-1]
-        final_name = temp_path_parts[-1]
+        dirname, basename = os.path.split(linkname)
         # Navigate to the right part in the directory tree
-        cur_path = os.sep
-        cur_node = root_node
-        for part in path_parts:
-            cur_path = os.path.join(cur_path, path)
-            if part not in cur_node.children:
-                new_node = get_directory_node(rootdir, cur_path, uid_map, gid_map)
-                cur_node.children[part] = new_node
-            cur_node = cur_node.children[part]
+        dir_node = find_directory_in_tree(root_node, dirname)
         # Insert the symlink node
-        cur_path = os.path.join(cur_path, final_name)
-        new_node = get_symlink_node(rootdir, cur_path, uid_map, gid_map)
-        cur_node.children[final_name] = new_node
+        new_node = get_symlink_node(rootdir, linkname, uid_map, gid_map)
+        dir_node.children[basename] = new_node
 
     # Step 3: insert the files into the directory tree
     for filename in files:
-        temp_path_parts = get_path_parts(filename)
-        path_parts = temp_path_parts[:-1]
-        final_name = temp_path_parts[-1]
+        dirname, basename = os.path.split(filename)
         # Navigate to the right part in the directory tree
-        cur_path = os.sep
-        cur_node = root_node
-        for part in path_parts:
-            cur_path = os.path.join(cur_path, path)
-            if part not in cur_node.children:
-                new_node = get_directory_node(rootdir, cur_path, uid_map, gid_map)
-                cur_node.children[part] = new_node
-            cur_node = cur_node.children[part]
-        # Insert the symlink node
-        cur_path = os.path.join(cur_path, final_name)
-        new_node = get_file_node(rootdir, cur_path, hash_cache, uid_map, gid_map)
-        cur_node.children[final_name] = new_node
+        dir_node = find_directory_in_tree(root_node, dirname)
+        # Insert the file node
+        new_node = get_file_node(rootdir, filename, digest_map, uid_map, gid_map)
+        dir_node.children[basename] = new_node
 
     return root_node
 
