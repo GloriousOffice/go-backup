@@ -21,15 +21,12 @@ over-subscribed.  Since most home directories are expected to hold
 more files, the sharding is recommended to be set to 2, which will
 hold 3.6M files. A sharding of 3 or higher is not recommended.
 """
-
-import hashing
-import itertools
 import os
 import shutil
 import utils
 
-class CAS(object):
 
+class CAS(object):
     NIBBLES_PER_SHARD = 2
 
     def __init__(self, root, sharding=2):
