@@ -34,7 +34,7 @@ def get_default_metadata(rootdir, path, uid_map=None, gid_map=None):
     metadata['mtime'] = stat.st_mtime
     metadata['user'] = uid_map.get(stat.st_uid, str(stat.st_uid))
     metadata['group'] = gid_map.get(stat.st_gid, str(stat.st_gid))
-    metadata['permissions'] = utils.filemode(stat.st_mode)
+    metadata['permissions'] = '%04o' % stat.st_mode
     return metadata
 
 

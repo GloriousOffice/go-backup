@@ -4,6 +4,7 @@ import grp
 import os.path
 import pwd
 
+
 def ensure_normalized(path):
     """Raise a ValueError exception if path does not equal its normalized version."""
     normalized_path = os.path.normpath(path)
@@ -74,48 +75,6 @@ def get_gid_name_map():
     """Return a dictionary that maps numerical group ID's to group names."""
     return dict((g.gr_gid, g.gr_name) for g in grp.getgrall())
 
-# Backported from Python 3.3
-# (http://hg.python.org/cpython/file/c440c5893d09/Lib/stat.py)
-# therefore has Python license.
-def filemode(mode):
-    """Convert a file's mode to a string of the form '-rwxrwxrwx'."""
-    import stat
-    _filemode_table = (
-        ((stat.S_IFLNK,              "l"),
-         (stat.S_IFREG,              "-"),
-         (stat.S_IFBLK,              "b"),
-         (stat.S_IFDIR,              "d"),
-         (stat.S_IFCHR,              "c"),
-         (stat.S_IFIFO,              "p")),
-
-        ((stat.S_IRUSR,              "r"),),
-        ((stat.S_IWUSR,              "w"),),
-        ((stat.S_IXUSR|stat.S_ISUID, "s"),
-         (stat.S_ISUID,              "S"),
-         (stat.S_IXUSR,              "x")),
-
-        ((stat.S_IRGRP,              "r"),),
-        ((stat.S_IWGRP,              "w"),),
-        ((stat.S_IXGRP|stat.S_ISGID, "s"),
-         (stat.S_ISGID,              "S"),
-         (stat.S_IXGRP,              "x")),
-
-        ((stat.S_IROTH,              "r"),),
-        ((stat.S_IWOTH,              "w"),),
-        ((stat.S_IXOTH|stat.S_ISVTX, "t"),
-         (stat.S_ISVTX,              "T"),
-         (stat.S_IXOTH,              "x"))
-        )
-
-    perm = []
-    for table in _filemode_table:
-        for bit, char in table:
-            if mode & bit == bit:
-                perm.append(char)
-                break
-        else:
-            perm.append("-")
-    return "".join(perm)
 
 def mkdir_p(directory):
     """Create a directory including all subdirectories leading to it, if
