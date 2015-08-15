@@ -12,6 +12,7 @@ MatchingResult = namedtuple('MatchingResult', ['filenames', 'symlinks', 'directo
 INCLUDE = 1
 EXCLUDE = 2
 
+
 def parse_pattern_file(f):
     """Return a list of patterns parsed from the file object f
 
@@ -92,7 +93,7 @@ def pattern_decision(path, patterns):
     for p in patterns:
         utils.ensure_normalized(p[1])
         if p[0] != INCLUDE and p[0] != EXCLUDE:
-          raise ValueError('Invalid pattern: unknown decision')
+            raise ValueError('Invalid pattern: unknown decision')
         if path_matches_single_pattern(path, p[1]):
             res = p[0]
     return res
