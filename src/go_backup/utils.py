@@ -58,11 +58,11 @@ def get_path_parts(path):
     while True:
         head, tail = os.path.split(cur_path)
         if tail != "":
-          result.append(tail)
-          cur_path = head
+            result.append(tail)
+            cur_path = head
         else:
-          break
-    return reversed(result)
+            break
+    return list(reversed(result))
 
 
 def get_uid_name_map():

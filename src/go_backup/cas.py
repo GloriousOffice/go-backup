@@ -157,12 +157,9 @@ class CAS(object):
             # All files in uncorrupted CAS were previously stored
             # by a .store() call, so we construct the hashes by
             # joining shards encoded in dirpath and the file names.
-            path_shards = []
-            for i in xrange(self._sharding):
-                dirpath, shard = os.path.split(dirpath) # remove last component
-                path_shards.append(shard)
-            path_shards = reversed(path_shards)
+            path_parts = utils.get_path_parts(dirpath)
+            shard_parts = path_parts[-self._sharding:]
 
             for hash_without_shards in filenames:
-                full_hash = ''.join(path_shards) + hash_without_shards
+                full_hash = ''.join(shard_parts) + hash_without_shards
                 yield full_hash
