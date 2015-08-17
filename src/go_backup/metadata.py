@@ -10,7 +10,7 @@ from collections import namedtuple
 default_metadata = ['name', 'mtime', 'user', 'group', 'permissions']
 FileNode = namedtuple('FileMetadata', default_metadata + ['hash', 'size'])
 DirectoryNode = namedtuple('DirectoryMetadata', default_metadata + ['children'])
-SymlinkNode = namedtuple('SymlinkMetadata', default_metadata + ['target'])
+SymlinkNode = namedtuple('SymlinkMetadata', default_metadata + ['link_target'])
 
 
 def get_default_metadata(rootdir, path, uid_map=None, gid_map=None):
@@ -57,7 +57,7 @@ def get_symlink_node(rootdir, path, uid_map=None, gid_map=None):
     metadata = get_default_metadata(rootdir, path, uid_map=uid_map, gid_map=gid_map)
 
     native_path = utils.build_native_path(rootdir, path)
-    metadata['target'] = os.readlink(native_path)
+    metadata['link_target'] = os.readlink(native_path)
     return SymlinkNode(**metadata)
 
 

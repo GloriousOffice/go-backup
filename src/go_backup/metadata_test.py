@@ -54,4 +54,4 @@ def test_get_symlink_node_1(tmpdir):
 
     res = metadata.get_symlink_node(str(tmpdir), '/testlink')
     assert isinstance(res, metadata.SymlinkNode)
-    assert res.target == 'test_destination'
+    assert res.link_target == 'test_destination'
