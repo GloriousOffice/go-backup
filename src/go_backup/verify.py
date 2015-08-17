@@ -54,7 +54,7 @@ def scan_backup(rootdir):
     return ScanResult(files, symlinks, directories, errors, ignored)
 
 
-transient_metadata = ['atime', 'mtime', 'ctime', 'user', 'group', 'permissions']
+transient_metadata = ['mtime', 'user', 'group', 'permissions']
 
 def strict_metadata(mdata):
     """Returns metadata items that are not considered transient, in particular, it

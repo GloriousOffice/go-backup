@@ -7,7 +7,7 @@ import tempfile
 import utils
 from collections import namedtuple
 
-default_metadata = ['name', 'atime', 'ctime', 'mtime', 'user', 'group', 'permissions']
+default_metadata = ['name', 'mtime', 'user', 'group', 'permissions']
 FileNode = namedtuple('FileMetadata', default_metadata + ['hash', 'size'])
 DirectoryNode = namedtuple('DirectoryMetadata', default_metadata + ['children'])
 SymlinkNode = namedtuple('SymlinkMetadata', default_metadata + ['target'])
@@ -29,8 +29,6 @@ def get_default_metadata(rootdir, path, uid_map=None, gid_map=None):
     # TODO: use strings instead of UNIX epoch seconds
     # TODO: fields we are currently not using: st_mode, st_ino, st_dev, st_nlink
     #       - is this intentional?
-    metadata['atime'] = stat.st_atime
-    metadata['ctime'] = stat.st_ctime
     metadata['mtime'] = stat.st_mtime
     metadata['user'] = uid_map.get(stat.st_uid, str(stat.st_uid))
     metadata['group'] = gid_map.get(stat.st_gid, str(stat.st_gid))
@@ -114,4 +112,17 @@ def get_metadata_tree(rootdir, files, symlinks, directories, digest_map, uid_map
 
 
 if __name__ == "__main__":
-    pass
+    import collections
+    import pattern
+    import StringIO
+    rootdir = '/home/madars/Documents/projects/go-backup'
+    patterns_file = StringIO.StringIO("+ /\n")
+    patterns = pattern.parse_pattern_file(patterns_file)
+    res  = pattern.assemble_paths(rootdir, patterns)
+    digest_map = collections.defaultdict(lambda : 'demo')
+    uid_map = utils.get_uid_name_map()
+    gid_map = utils.get_gid_name_map()
+    tree = get_metadata_tree(rootdir, res.filenames, res.symlinks, res.directories,
+                             digest_map, uid_map, gid_map)
+    import json
+    print json.dumps(tree, indent=2)

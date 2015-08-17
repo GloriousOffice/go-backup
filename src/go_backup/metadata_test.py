@@ -8,8 +8,6 @@ def test_get_default_metadata_1(tmpdir):
     res = metadata.get_default_metadata(str(tmpdir), '/tmp.txt')
     assert res['name'] == 'tmp.txt'
     # TODO: properly test these fields
-    assert 'atime' in res
-    assert 'ctime' in res
     assert 'mtime' in res
     assert 'user' in res
     assert 'group' in res
